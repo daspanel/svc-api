@@ -65,10 +65,10 @@ docker-clean-dangling:
 	docker images --no-trunc -q -f dangling=true | xargs -r docker rmi
 
 docker-clean-dev:
-	-@docker rmi admindaspanel/svc-api-dev
+	-@docker rmi daspanel/svc-api-dev
 
 docker-build-dev: clean docker-clean-dev rootfs-fixperms
-	docker build -f Dockerfile.dev -t admindaspanel/svc-api-dev .
+	docker build -f Dockerfile.dev -t daspanel/svc-api-dev .
 
 install-tools:
 	sudo pip install gitchangelog pystache

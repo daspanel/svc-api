@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -x
+
+# Remove build packages
+apk del --purge build-deps
+
+

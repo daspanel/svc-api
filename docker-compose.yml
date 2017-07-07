@@ -1,0 +1,25 @@
+version: '2'
+services:
+    daspanel-api:
+        image: daspanel/svc-api-dev
+        volumes:
+            - ./data:/opt/daspanel/data
+        networks:
+            - frontend
+            - backend
+        environment:
+            - LOCAL_USER_ID=1000
+            - GUNICORN_APP_DIR=/opt/daspanel/apps/apiserver/api_server
+            - GUNICORN_CMD=/opt/daspanel/apps/apiserver/api_server/wsgi_gunicorn --bind=0.0.0.0:8080 --user=daspanel --group=daspanel api-connexion:app Daspanel_Api_Server
+            - DASPANEL_WAIT_FOR_API=NO
+        env_file:
+            - daspanel.env
+        expose:
+            - "8080"
+networks:  
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+
