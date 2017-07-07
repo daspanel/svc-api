@@ -1,9 +1,6 @@
 FROM alpine:3.6
 MAINTAINER Abner G Jacobsen - http://daspanel.com <admin@daspanel.com>
 
-# Thanks:
-#   https://github.com/openbridge/ob_php-fpm
-
 # Parse Daspanel common arguments for the build command.
 ARG VERSION
 ARG VCS_URL
@@ -12,6 +9,7 @@ ARG BUILD_DATE
 ARG S6_OVERLAY_VERSION=v1.19.1.1
 ARG DASPANEL_IMG_NAME=svc-api
 ARG DASPANEL_OS_VERSION=alpine3.6
+ARG PYTHON_VERSION=2.7
 
 # Parse Container specific arguments for the build command.
 ARG CADDY_PLUGINS="http.cors,http.expires,http.ipfilter,http.ratelimit,http.realip"
@@ -63,17 +61,17 @@ RUN set -x \
     && rm -f /tmp/s6-overlay.tar.gz \
 
     # Install Python
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/10_install_python2.7 \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/10_install_python${PYTHON_VERSION} \
 
     # Install build environment packages
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/00_buildenv \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/00_buildenv${PYTHON_VERSION} \
 
     # Install pyCurl
     && export PYCURL_SSL_LIBRARY=openssl \
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip2.7_install "--compile pycurl==7.43.0" \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip${PYTHON_VERSION}_install "--compile pycurl==7.43.0" \
 
     # Install basic python packages used by Daspanel
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip2.7_install "gunicorn==19.7.1 setproctitle gevent" \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip${PYTHON_VERSION}_install "gunicorn==19.7.1 setproctitle gevent" \
 
     # Install software
     && mkdir -p ${INSTALL_PATH} \
@@ -83,7 +81,7 @@ RUN set -x \
     && mv /tmp/api-server-master/requirements ${INSTALL_PATH}/. \
 
     # Install pip packages needed by the software
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip2.7_install "-r ${INSTALL_PATH}/requirements/prod.txt " \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip${PYTHON_VERSION}_install "-r ${INSTALL_PATH}/requirements/dev.txt " \
 
     # Remove build environment packages
     && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/09_cleanbuildenv \

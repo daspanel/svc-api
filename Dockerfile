@@ -1,9 +1,6 @@
 FROM alpine:3.6
 MAINTAINER Abner G Jacobsen - http://daspanel.com <admin@daspanel.com>
 
-# Thanks:
-#   https://github.com/openbridge/ob_php-fpm
-
 # Parse Daspanel common arguments for the build command.
 ARG VERSION
 ARG VCS_URL
@@ -12,11 +9,12 @@ ARG BUILD_DATE
 ARG S6_OVERLAY_VERSION=v1.19.1.1
 ARG DASPANEL_IMG_NAME=svc-api
 ARG DASPANEL_OS_VERSION=alpine3.6
+ARG PYTHON_VERSION=2.7
 
 # Parse Container specific arguments for the build command.
 ARG CADDY_PLUGINS="http.cors,http.expires,http.ipfilter,http.ratelimit,http.realip"
 ARG CADDY_URL="https://caddyserver.com/download/linux/amd64?plugins=${CADDY_PLUGINS}"
-ARG INSTALL_PATH /opt/daspanel/apps/apiserver
+ARG INSTALL_PATH=/opt/daspanel/apps/apiserver
 
 # Set default env variables
 ENV \
@@ -62,56 +60,39 @@ RUN set -x \
     && tar xvfz /tmp/s6-overlay.tar.gz -C / \
     && rm -f /tmp/s6-overlay.tar.gz \
 
-    # ensure www-data user exists
-    && addgroup -g 82 -S www-data \
-    && adduser -u 82 -D -S -h /home/www-data -s /sbin/nologin -G www-data www-data \
-
-    # Activate additional repositories
-    && echo '@testing http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
-    && echo '@community http://nl.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
+    # Install Python
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/10_install_python${PYTHON_VERSION} \
 
     # Install build environment packages
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/00_buildenv \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/00_buildenv${PYTHON_VERSION} \
 
-    # Install PHP and modules avaiable on the default repositories of this Linux distro
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/99_install_pkgs "${PHP_MINIMAL}" \
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/99_install_pkgs "${PHP_MODULES}" \
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/99_install_pkgs "${PHP_MODULES_EXTRA}" \
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/99_install_pkgs "${PHP_PHPDBG}" \
-    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/99_install_pkgs "${PHP_XDEBUG}" \
+    # Install pyCurl
+    && export PYCURL_SSL_LIBRARY=openssl \
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip${PYTHON_VERSION}_install "--compile pycurl==7.43.0" \
 
-    # Install PHP Composer
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    # Install basic python packages used by Daspanel
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip${PYTHON_VERSION}_install "gunicorn==19.7.1 setproctitle gevent" \
 
-    # Install PHPUnit
-    && curl -sSL https://phar.phpunit.de/phpunit-6.2.phar -o /usr/local/bin/phpunit \
-    && chmod +x /usr/local/bin/phpunit \
+    # Install software
+    && mkdir -p ${INSTALL_PATH} \
+    && wget --no-check-certificate -O /tmp/api-src.zip https://github.com/daspanel/api-server/archive/master.zip \
+    && unzip -o -d /tmp /tmp/api-src.zip \
+    && mv /tmp/api-server-master/api_server ${INSTALL_PATH}/. \
+    && mv /tmp/api-server-master/requirements ${INSTALL_PATH}/. \
 
-    # PECL fix
-    # Bug Fix: 
-    # https://serverfault.com/questions/589877/pecl-command-produces-long-list-of-errors
-    # https://bugs.alpinelinux.org/issues/5378
-    # Patch pecl command
-    && sed -i -e 's/\(PHP -C\) -n/\1/g' /usr/bin/pecl \
-    && mkdir -p /tmp/pear/cache \
-
-    # Cleanup after phpizing
-    #&& rm -rf /usr/include/php7 /usr/lib/php7/build \
-
-    # Change www-data user and group to Daspanel default
-    #&& usermod -u 1000 www-data \
-    #&& groupmod -g 1000 www-data \
+    # Install pip packages needed by the software
+    && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/20_pip${PYTHON_VERSION}_install "-r ${INSTALL_PATH}/requirements/dev.txt " \
 
     # Remove build environment packages
     && sh /opt/daspanel/bootstrap/${DASPANEL_OS_VERSION}/${DASPANEL_IMG_NAME}/09_cleanbuildenv \
 
     # Install Caddy
-    && curl --silent --show-error --fail --location \
-        --header "Accept: application/tar+gzip, application/x-gzip, application/octet-stream" -o - \
-        "${CADDY_URL}" \
-        | tar --no-same-owner -C /usr/sbin/ -xz caddy \
-    && chmod 0755 /usr/sbin/caddy \
-    && setcap "cap_net_bind_service=+ep" /usr/sbin/caddy \
+    #&& curl --silent --show-error --fail --location \
+    #    --header "Accept: application/tar+gzip, application/x-gzip, application/octet-stream" -o - \
+    #    "${CADDY_URL}" \
+    #    | tar --no-same-owner -C /usr/sbin/ -xz caddy \
+    #&& chmod 0755 /usr/sbin/caddy \
+    #&& setcap "cap_net_bind_service=+ep" /usr/sbin/caddy \
 
     # Cleanup
     && rm -rf /tmp/* \
@@ -122,5 +103,5 @@ ENTRYPOINT ["/init"]
 CMD []
 
 # Expose ports for the service
-EXPOSE 443
+EXPOSE 8080
 

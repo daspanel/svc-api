@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -x
+
+# Install build packages
+apk add --no-cache --update --virtual build-deps \
+    build-base  \
+    build-base bash gcc musl-dev git libressl-dev curl curl-dev python3-dev \
+    libffi-dev mariadb-dev libxml2-dev libxslt-dev
+

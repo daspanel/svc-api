@@ -1,9 +1,0 @@
-#!/bin/sh
-
-MODULE=$1
-
-set -x
-
-# Install python packages
-yes '' | pip install --no-cache-dir --upgrade $MODULE
-rm -r /root/.cache

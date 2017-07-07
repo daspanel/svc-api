@@ -1,0 +1,56 @@
+#!/usr/bin/with-contenv sh
+
+export DASPANEL_CONTAINER_TYPE="svc-api"
+printf $DASPANEL_CONTAINER_TYPE > /var/run/s6/container_environment/DASPANEL_CONTAINER_TYPE
+
+# Installation UUID must be informed
+if [ -z "$DASPANEL_SYS_UUID" ]; then
+    echo "[DASPANEL-$DASPANEL_CONTAINER_TYPE] ERROR: You must set the env variable DASPANEL_SYS_UUID to a valid UUID"
+    exit 1
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/containers" ]; then
+	mkdir -p /opt/daspanel/data/$DASPANEL_SYS_UUID/containers
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/content" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/content"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/db" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/db"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/sessions" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/sessions"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/upload" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/upload"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/upload/tmp" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/upload/tmp"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/content" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/content"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/certs" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/certs"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/certs/_account" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/certs/_account"
+fi
+
+if [ ! -d "/opt/daspanel/data/$DASPANEL_SYS_UUID/letsencrypt" ]; then
+	mkdir -p "/opt/daspanel/data/$DASPANEL_SYS_UUID/letsencrypt"
+fi
+
+if [ ! -d "/opt/daspanel/log/$DASPANEL_SYS_UUID/apiserver" ]; then
+	mkdir -p "/opt/daspanel/log/$DASPANEL_SYS_UUID/apiserver"
+fi
+
+
