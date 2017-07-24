@@ -28,7 +28,7 @@ IS_GITDIR=$(shell git rev-parse --is-inside-work-tree)
 NEXT_PATCH=$(shell tools/bump patch `git describe --tags --abbrev=0`)
 NEXT_MINOR=$(shell tools/bump minor `git describe --tags --abbrev=0`)
 NEXT_MAJOR=$(shell tools/bump major `git describe --tags --abbrev=0`)
-DIST_SRC=$(shell ls src/)
+DIST_SRC=$(shell ls rootfs/)
 
 .PHONY: clean-pyc clean-build clean guard-%
 
@@ -52,7 +52,7 @@ help:
 	@echo "install-tools         - install tools needed to manage the project"
 
 rootfs-fixperms:
-	-@chmod -R go-w src
+	-@chmod -R go-w rootfs
 
 docker-down-dev:
 	docker-compose -f docker-compose-dev.yml down
@@ -159,7 +159,7 @@ build-zip:
 	@rm -rf build/*.zip
 	@for i in $(DIST_SRC); \
 	do \
-		cd src/$$i; \
+		cd rootfs/$$i; \
 		zip -q -r ../../build/$$i.zip *; \
 		cd ../..; \
 	done
